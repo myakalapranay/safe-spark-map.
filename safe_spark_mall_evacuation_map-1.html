@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Safe Spark | Mall Evacuation Demo</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#172033;background:#f3f6fb}
+*{box-sizing:border-box}body{margin:0}header{background:#10213b;color:white;padding:22px 18px}
+header h1{margin:0 0 6px;font-size:clamp(1.35rem,4vw,2rem)}header p{margin:0;color:#dbe7f7}
+main{max-width:1000px;margin:auto;padding:18px}
+.notice{background:#fff4d6;border:1px solid #f0d28a;border-radius:12px;padding:12px 14px;margin-bottom:16px;line-height:1.45}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
+button{border:0;border-radius:9px;padding:11px 14px;font-weight:700;background:#dce7f7;color:#172033;cursor:pointer}
+button.active{background:#174ea6;color:white}
+.floors{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px}
+.floor{background:white;border:1px solid #d8e0eb;border-radius:14px;padding:14px;box-shadow:0 3px 12px #1720330b}
+.floor h2{margin:0 0 10px;font-size:1.15rem}.floor p{margin:0 0 12px;color:#5d687a;font-size:.9rem}
+.map{position:relative;min-height:330px;border:3px solid #7c899b;border-radius:8px;background:#eef2f6;overflow:hidden;padding:12px}
+.shop{position:absolute;background:#d7e0ec;border:1px solid #9caabc;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.78rem;padding:4px;color:#26364b}
+.corridor{position:absolute;background:#fff;border:1px dashed #a4afbf}
+.route{position:absolute;height:7px;background:#138a4b;border-radius:8px;box-shadow:0 0 0 2px #fff;transform-origin:left center;z-index:4}
+.route:after{content:"";position:absolute;right:-2px;top:-5px;border-left:12px solid #138a4b;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.exit{position:absolute;background:#138a4b;color:white;font-weight:bold;font-size:.75rem;border-radius:5px;padding:5px 7px;z-index:5}
+.hazard{position:absolute;background:#d62828;color:white;font-weight:bold;border-radius:50%;width:30px;height:30px;display:none;align-items:center;justify-content:center;z-index:6;box-shadow:0 0 0 5px #d6282830}
+.hazard.show{display:flex}.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:.85rem;color:#4b5565}.dot{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.routeText{background:#e7f7ed;border:1px solid #b8e3c7;border-radius:10px;padding:12px 14px;margin-top:16px;line-height:1.5}
+footer{font-size:.82rem;color:#596579;padding:18px 0 8px}
+@media(max-width:420px){.map{min-height:300px}.shop{font-size:.68rem}}
+</style>
+</head>
+<body>
+<header><h1>🟢 SAFE SPARK — Mall Evacuation Demo</h1><p>Interactive two-floor concept map for an ESP32 fire-alert project</p></header>
+<main>
+<div class="notice"><strong>Important safety note:</strong> This is a student demonstration, not a certified emergency plan. The exits and routes are illustrative. In a real building, follow staff instructions, alarms, posted signs, and approved evacuation plans. Never use lifts during a fire.</div>
+<div><strong>Demo scenario:</strong> choose a simulated alert to highlight a hazard and show an example route away from it.</div>
+<div class="controls" role="group" aria-label="Select demo scenario">
+<button class="active" data-scenario="none">Normal view</button>
+<button data-scenario="ground">Ground-floor hazard</button>
+<button data-scenario="upper">First-floor hazard</button>
+<button data-scenario="both">Both floors alert</button>
+</div>
+<div class="floors">
+<section class="floor"><h2>Ground Floor</h2><p>Shops, central corridor, and illustrative outward exits</p>
+<div class="map" id="groundMap" aria-label="Ground floor diagram">
+<div class="corridor" style="left:8%;top:42%;width:84%;height:24%"></div>
+<div class="shop" style="left:8%;top:8%;width:25%;height:28%">Shop A</div>
+<div class="shop" style="left:38%;top:8%;width:24%;height:28%">Food Court</div>
+<div class="shop" style="left:67%;top:8%;width:25%;height:28%">Shop B</div>
+<div class="shop" style="left:8%;top:72%;width:25%;height:20%">Shop C</div>
+<div class="shop" style="left:38%;top:72%;width:24%;height:20%">Service Area</div>
+<div class="shop" style="left:67%;top:72%;width:25%;height:20%">Shop D</div>
+<div class="route" style="left:50%;top:53%;width:33%;transform:rotate(0deg)"></div>
+<div class="route" style="left:50%;top:53%;width:31%;transform:rotate(180deg)"></div>
+<div class="exit" style="left:2%;top:47%">EXIT A</div><div class="exit" style="right:2%;top:47%">EXIT B</div>
+<div class="hazard" id="groundHazard" style="left:46%;top:45%">!</div>
+</div></section>
+<section class="floor"><h2>First Floor</h2><p>Retail area and illustrative stairs to ground-floor exits</p>
+<div class="map" id="upperMap" aria-label="First floor diagram">
+<div class="corridor" style="left:8%;top:42%;width:84%;height:24%"></div>
+<div class="shop" style="left:8%;top:8%;width:25%;height:28%">Shop E</div>
+<div class="shop" style="left:38%;top:8%;width:24%;height:28%">Cinema Lobby</div>
+<div class="shop" style="left:67%;top:8%;width:25%;height:28%">Shop F</div>
+<div class="shop" style="left:8%;top:72%;width:25%;height:20%">Shop G</div>
+<div class="shop" style="left:38%;top:72%;width:24%;height:20%">Atrium</div>
+<div class="shop" style="left:67%;top:72%;width:25%;height:20%">Shop H</div>
+<div class="route" style="left:50%;top:53%;width:31%;transform:rotate(180deg)"></div>
+<div class="route" style="left:50%;top:53%;width:31%;transform:rotate(0deg)"></div>
+<div class="exit" style="left:2%;top:47%">STAIRS A</div><div class="exit" style="right:2%;top:47%">STAIRS B</div>
+<div class="hazard" id="upperHazard" style="left:46%;top:45%">!</div>
+</div></section>
+</div>
+<div class="legend"><span><i class="dot" style="background:#138a4b"></i>Example route</span><span><i class="dot" style="background:#d62828"></i>Simulated hazard</span><span><i class="dot" style="background:#d7e0ec;border:1px solid #9caabc"></i>Shop / area</span></div>
+<div class="routeText" id="routeText" aria-live="polite"><strong>Normal view:</strong> No simulated hazard is active. Follow official signs and instructions in a real emergency.</div>
+<footer>Safe Spark student project concept • Route lines are illustrative and do not calculate live building conditions. Do not rely on this page as a real-life safety system.</footer>
+</main>
+<script>
+const buttons=[...document.querySelectorAll('button[data-scenario]')];
+const ground=document.getElementById('groundHazard'), upper=document.getElementById('upperHazard'), textBox=document.getElementById('routeText');
+const messages={
+ none:'<strong>Normal view:</strong> No simulated hazard is active. Follow official signs and instructions in a real emergency.',
+ ground:'<strong>Ground-floor alert demo:</strong> A simulated hazard is shown near the central corridor. The green lines are illustrative alternatives toward marked exits; use only exits confirmed safe by trained staff.',
+ upper:'<strong>First-floor alert demo:</strong> A simulated hazard is shown near the upper-floor central corridor. The green lines illustrate moving away from the alert toward stairs only if those stairs and the route are confirmed safe. Never use lifts during a fire.',
+ both:'<strong>Multiple-alert demo:</strong> Both floors show simulated alerts. This page cannot determine a safe route from live sensor data. Follow building announcements, staff instructions, and approved emergency procedures.'
+};
+function setScenario(s){buttons.forEach(b=>b.classList.toggle('active',b.dataset.scenario===s));ground.classList.toggle('show',s==='ground'||s==='both');upper.classList.toggle('show',s==='upper'||s==='both');textBox.innerHTML=messages[s];}
+buttons.forEach(b=>b.addEventListener('click',()=>setScenario(b.dataset.scenario)));
+</script>
+</body></html>
